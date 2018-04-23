@@ -1,16 +1,16 @@
 import React, { Component } from "react";
 import Jumbotron from "../../components/Jumbotron";
 import API from "../../utils/API";
-import { Link } from "react-router-dom";
 import { Col, Row, Container } from "../../components/Grid";
-import { List, ListItem } from "../../components/List";
 import { Input, FormBtn } from "../../components/Form";
+import { Articles, Document } from "../../components/Articles";
+import SaveBtn from "../../components/SaveBtn";
+import Moment from 'react-moment';
 
 class Home extends Component {
   state = {
     articles: [],
-    searchTerm: "",
-    numResults: 10,
+    search: "",
     title: "",
     snippet: "",
     date: "",
@@ -18,14 +18,21 @@ class Home extends Component {
   };
 
   componentDidMount() {
-    this.loadArticles();
+    this.setState({ articles: [] });
   }
 
-  loadArticles = () => {
-    API.getArticles()
+  loadArticles = query => {
+    API.search(query)
       .then(res =>
+        this.setState({ articles: res.data.response.docs })
+      )
+      .catch(err => console.log(err));
+  };
 
-        this.setState({ articles: res.data, title: "", snippet: "", date: "", url: "" })
+  saveArticle = articleData => {
+    API.saveArticle(articleData)
+      .then(res =>
+        console.log(res)
       )
       .catch(err => console.log(err));
   };
@@ -39,66 +46,67 @@ class Home extends Component {
 
   handleFormSubmit = event => {
     event.preventDefault();
-    if (this.state.title) {
-      API.getArticles({
-        title: this.state.title,
-        snippet: this.state.snippet
-      })
-        .then(res => this.loadArticles())
-        .catch(err => console.log(err));
-    }
+    this.loadArticles(this.state.search);
+    this.setState({ search: ""});
   };
 
   render() {
     return (
-      <Container>
-        <Row>
-          <Col size="md-6">
+      <div>
+        <Jumbotron>
+          <h1>NYT Articles Search</h1>
+        </Jumbotron>
+        <Container>
+          <Row>
+            <Col size="md-3">
+            </Col>
+            <Col size="md-6">
 
-            <form>
-              <Input
-                value={this.state.searchTerm}
-                onChange={this.handleInputChange}
-                name="searchTerm"
-                placeholder="Enter topic to search"
-              />
-              <Input
-                value={this.state.numResults}
-                onChange={this.handleInputChange}
-                name="numResults"
-                placeholder="Number of records to retrieve (optional)"
-              />
-              <FormBtn
-                disabled={!(this.state.searchTerm)}
-                onClick={this.handleFormSubmit}
-              >
-                Submit Book
-              </FormBtn>
-            </form>
-          </Col>
-          <Col size="md-12 sm-12">
-            <Jumbotron>
-              <h1>articles On My List</h1>
-            </Jumbotron>
-            {this.state.articles.length ? (
-              <List>
-                {this.state.articles.map(article => (
-                  <ListItem key={article._id}>
-                    <Link to={"/articles/" + article._id}>
-                      <strong>
-                        {article.title}
-                      </strong>
-                    </Link>
-
-                  </ListItem>
-                ))}
-              </List>
-            ) : (
-              <h3>No Results to Display</h3>
-            )}
-          </Col>
-        </Row>
-      </Container>
+              <form>
+                <Input
+                  value={this.state.search}
+                  onChange={this.handleInputChange}
+                  search={this.state.search}
+                  placeholder="Enter topic to search"
+                  name="search"
+                />
+                <FormBtn
+                  disabled={!(this.state.search)}
+                  onClick={this.handleFormSubmit}
+                >
+                  Search
+                </FormBtn>
+              </form>
+            </Col>
+            <Col size="md-3">
+            </Col>
+            <Col size="md-12 sm-12">
+              <h1 style={{ fontSize: "32px" }}>Search Results</h1>
+              {this.state.articles.length ? (
+                <Articles>
+                  {this.state.articles.map(article => (
+                    <Document key={article._id}>
+                      <SaveBtn onClick={() => this.saveArticle({
+                        title: article.headline.main,
+                        snippet: article.snippet,
+                        date: article.pub_date,
+                        url: article.web_url
+                      })} />
+                      <h2><strong>{article.headline.main}</strong></h2>
+                      <p><em><Moment format="MM/DD/YYYY">{article.pub_date}</Moment></em></p>
+                      <p>{article.snippet}</p>
+                      <p><a href={article.web_url}>Read More</a></p>
+                      <hr />
+                    </Document>
+                  ))}
+                </Articles>
+              ) : (
+                <h3 style={{ fontSize: "18px" }}>No Results to Display</h3>
+              )}
+            </Col>
+          </Row>
+        </Container>
+      </div>
     )
   }
 

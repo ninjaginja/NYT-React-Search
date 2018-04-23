@@ -4,10 +4,12 @@
   border-radius: 4px;
   overflow-y: scroll;
   overflow-x: hidden;
+  padding: 10px 20px 10px 0px;
 }
 
 .articles-overflow-container ul {
   margin: 0;
+  list-style-type: none;
 }
 
 .articles-overflow-container li {
